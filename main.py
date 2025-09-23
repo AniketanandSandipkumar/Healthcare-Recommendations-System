@@ -24,6 +24,47 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 app = FastAPI()
 
 # ------------------ DB ------------------
+# ------------------ HEART DISEASE MODEL ------------------
+heart_model = joblib.load("heart_model.pkl")
+heart_scaler = joblib.load("heart_scaler.pkl")   # if you scaled features
+
+heart_features = [
+    "age", "sex", "chest_pain", "blood_pressure", "cholestrol",
+    "fbs", "restecg", "max_heart_rate", "exang", 
+    "oldpeak", "slope", "major_vessels", "thal"
+]
+
+class HeartRequest(BaseModel):
+    age: int
+    sex: int
+    chest_pain: int
+    blood_pressure: float
+    cholestrol: float
+    fbs: int
+    restecg: int
+    max_heart_rate: int
+    exang: int
+    oldpeak: float
+    slope: int
+    major_vessels: int
+    thal: int
+
+@app.post("/predict_heart")
+def predict_heart(req: HeartRequest):
+    # Convert request to dataframe
+    X = pd.DataFrame([req.dict().values()], columns=heart_features)
+    
+    # Scale input
+    X_scaled = heart_scaler.transform(X)
+
+    # Predict
+    prediction = heart_model.predict(X_scaled)[0]
+    proba = heart_model.predict_proba(X_scaled)[0].tolist()
+
+    return {
+        "prediction": int(prediction),   # 0 = No Disease, 1 = Heart Disease
+        "probabilities": {"No Disease": proba[0], "Disease": proba[1]}
+    }
 
 # ------------------ KNN MODEL LOADING ------------------
 knn_model = joblib.load("knn_model.pkl")
@@ -279,4 +320,5 @@ def recommend_knn(disease_name: str, db: Session = Depends(get_db), current_user
     if recs is None:
         raise HTTPException(status_code=404, detail=f"No disease found for '{disease_name}'")
     return {"input_disease": disease_name, "recommendations": recs}
+
 
