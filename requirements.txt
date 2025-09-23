@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-jose
+passlib[bcrypt]
+sqlalchemy
+pydantic
+textblob
+scikit-learn
+pandas
+joblib
+matplotlib
+seaborn
+streamlit
+gunicorn
