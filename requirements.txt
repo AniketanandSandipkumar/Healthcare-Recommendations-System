@@ -12,3 +12,4 @@ matplotlib
 seaborn
 streamlit
 gunicorn
+python-multipart
