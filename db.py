@@ -2,12 +2,13 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Foreign
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./app.db"
+DATABASE_URL = "sqlite:///./app.db"  # Single DB for both backend and Streamlit
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+# ------------------- MODELS -------------------
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -33,8 +34,8 @@ class ActivityLog(Base):
     __tablename__ = "activities"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    action_type = Column(String)  # prediction, search, feedback, click
-    details = Column(Text)  # JSON or plain text
+    action_type = Column(String)
+    details = Column(Text)
     timestamp = Column(DateTime, default=datetime.utcnow)
     user = relationship("User", back_populates="activities")
 
@@ -42,12 +43,13 @@ class FeedbackLog(Base):
     __tablename__ = "feedback"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    prediction_id = Column(Integer, ForeignKey("logs.id"))  # feedback linked to a prediction
-    text = Column(Text)  # raw feedback
-    sentiment = Column(String)  # positive, negative, neutral
+    prediction_id = Column(Integer, ForeignKey("logs.id"))
+    text = Column(Text)
+    sentiment = Column(String)
     timestamp = Column(DateTime, default=datetime.utcnow)
-
     user = relationship("User")
     prediction = relationship("PredictionLog")
 
+# Create tables if they don't exist
 Base.metadata.create_all(bind=engine)
+
