@@ -17,30 +17,18 @@ def get_db_connection():
 def load_predictions():
     conn = get_db_connection()
     df = pd.read_sql("SELECT * FROM logs", conn)
-    predictions = load_predictions()
- if predictions.empty:
-    st.info("No prediction data available yet.")
-    predictions = pd.DataFrame(columns=["disease","drug","timestamp"])
     conn.close()
     return df
 
 def load_activities():
     conn = get_db_connection()
     df = pd.read_sql("SELECT * FROM activities", conn)
-    activities= load_activities()
- if activities.empty:
-    st.info("No prediction data available yet.")
-    activities = pd.DataFrame(columns=["disease","drug","timestamp"])
     conn.close()
     return df
 
 def load_feedbacks():
     conn = get_db_connection()
     df = pd.read_sql("SELECT * FROM feedback", conn)
-    feedbacks = load_feedbacks()
- if activities.empty:
-    st.info("No prediction data available yet.")
-    activities = pd.DataFrame(columns=["disease","drug","timestamp"])
     conn.close()
     return df
 
@@ -117,6 +105,7 @@ with tab1:
 with tab2:
     powerbi_link2 = "YOUR_POWERBI_LINK_2"
     st.components.v1.html(f'<iframe width="100%" height="600" src="{https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
 
 
