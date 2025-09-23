@@ -73,6 +73,26 @@ if submit:
     st.write(f"**Heart Disease Risk:** {'YES' if res['prediction']==1 else 'NO'}")
     st.write(f"**Probabilities:** {res['probabilities']}")
 
+# ----------------- DISEASE DRUG RECOMMENDER -----------------
+st.subheader("💊 Disease & Drug Recommendation")
+
+with st.form("disease_form"):
+    disease_name = st.text_input("Enter Disease Name", "")
+    submit_disease = st.form_submit_button("Get Recommendations")
+
+if submit_disease and disease_name.strip() != "":
+    try:
+        res = requests.get(f"{API_URL}/recommend_knn/{disease_name}").json()
+        if "recommendations" in res and res["recommendations"]:
+            rec_df = pd.DataFrame(res["recommendations"])
+            st.write("### Recommended Diseases & Drugs")
+            st.dataframe(rec_df)
+        else:
+            st.warning(res.get("detail", "⚠️ No recommendations found."))
+    except Exception as e:
+        st.error(f"Error fetching recommendations: {e}")
+
+
 # ----------------- DASHBOARD -----------------
 predictions = load_predictions()
 activities = load_activities()
@@ -116,6 +136,7 @@ with tab1:
 with tab2:
     powerbi_link2 = "https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be"
     st.components.v1.html(f'<iframe width="100%" height="600" src="{powerbi_link2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
 
 
