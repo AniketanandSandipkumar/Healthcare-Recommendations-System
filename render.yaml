@@ -2,11 +2,13 @@ services:
   - type: web
     name: healthcare-backend
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
 
   - type: web
     name: healthcare-frontend
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "streamlit run app.py --server.port 10000 --server.address 0.0.0.0"
