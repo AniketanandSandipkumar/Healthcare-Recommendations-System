@@ -16,21 +16,32 @@ def get_db_connection():
 
 def load_predictions():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT * FROM logs", conn)
+    try:
+        df = pd.read_sql("SELECT * FROM logs", conn)
+    except Exception:
+        # Return empty DataFrame if table does not exist
+        df = pd.DataFrame(columns=["id", "user_id", "disease", "drug", "timestamp"])
     conn.close()
     return df
 
 def load_activities():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT * FROM activities", conn)
+    try:
+        df = pd.read_sql("SELECT * FROM activities", conn)
+    except Exception:
+        df = pd.DataFrame(columns=["id", "user_id", "action_type", "details", "timestamp"])
     conn.close()
     return df
 
 def load_feedbacks():
     conn = get_db_connection()
-    df = pd.read_sql("SELECT * FROM feedback", conn)
+    try:
+        df = pd.read_sql("SELECT * FROM feedback", conn)
+    except Exception:
+        df = pd.DataFrame(columns=["id", "user_id", "prediction_id", "text", "sentiment", "timestamp"])
     conn.close()
     return df
+
 
 # ----------------- SIDEBAR HEART FORM -----------------
 with st.sidebar.form("heart_form"):
@@ -105,6 +116,7 @@ with tab1:
 with tab2:
     powerbi_link2 = "YOUR_POWERBI_LINK_2"
     st.components.v1.html(f'<iframe width="100%" height="600" src="{https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
 
 
