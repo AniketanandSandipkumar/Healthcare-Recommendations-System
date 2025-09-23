@@ -14,6 +14,40 @@ predictions = pd.read_sql("SELECT * FROM logs", conn)
 activities = pd.read_sql("SELECT * FROM activities", conn)
 feedbacks = pd.read_sql("SELECT * FROM feedback", conn)
 
+st.sidebar.title("🫀 Heart Disease Prediction")
+
+with st.sidebar.form("heart_form"):
+    age = st.number_input("Age", 20, 100, 40)
+    sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0,1])
+    chest_pain = st.selectbox("Chest Pain Type (0-3)", [0,1,2,3])
+    blood_pressure = st.number_input("Resting BP", 80, 200, 120)
+    cholestrol = st.number_input("Cholestrol", 100, 600, 200)
+    fbs = st.selectbox("Fasting Blood Sugar >120 (1 = Yes, 0 = No)", [0,1])
+    restecg = st.selectbox("Rest ECG (0-2)", [0,1,2])
+    max_heart_rate = st.number_input("Max Heart Rate", 60, 220, 150)
+    exang = st.selectbox("Exercise Angina (1=Yes, 0=No)", [0,1])
+    oldpeak = st.number_input("Oldpeak", -2.0, 7.0, 1.0)
+    slope = st.selectbox("Slope (0-2)", [0,1,2])
+    major_vessels = st.selectbox("Major Vessels (0-3)", [0,1,2,3])
+    thal = st.selectbox("Thal (0-3)", [0,1,2,3])
+
+    submit = st.form_submit_button("Predict")
+
+if submit:
+    payload = {
+        "age": age, "sex": sex, "chest_pain": chest_pain, 
+        "blood_pressure": blood_pressure, "cholestrol": cholestrol,
+        "fbs": fbs, "restecg": restecg, "max_heart_rate": max_heart_rate,
+        "exang": exang, "oldpeak": oldpeak, "slope": slope,
+        "major_vessels": major_vessels, "thal": thal
+    }
+    
+    res = requests.post(f"{API_URL}/predict_heart", json=payload).json()
+    
+    st.write("### 🩺 Prediction Result:")
+    st.write(f"**Heart Disease Risk:** {'YES' if res['prediction'] == 1 else 'NO'}")
+    st.write(f"**Probabilities:** {res['probabilities']}")
+
 # Existing Matplotlib/Seaborn Visuals
 
 # Disease Distribution
@@ -67,3 +101,4 @@ with tab2:
     st.components.v1.html(f"""
         <iframe width="100%" height="600" src="{powerbi_link2}" frameborder="0" allowFullScreen="true"></iframe>
     """, height=620)
+
