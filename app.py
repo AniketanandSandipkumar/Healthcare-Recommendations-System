@@ -5,14 +5,50 @@ import seaborn as sns
 import sqlite3
 
 # Connect to your SQLite DB
-conn = sqlite3.connect("app.db")
+conn = sqlite3.connect("project.db", check_same_thread=False)
+cursor = conn.cursor()
+# Prediction logs
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS prediction_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user TEXT,
+    disease TEXT,
+    drug TEXT,
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+# Activity logs
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user TEXT,
+    action_type TEXT,
+    details TEXT,
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+# Feedback logs
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS feedback_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user TEXT,
+    disease TEXT,
+    sentiment TEXT,
+    text TEXT,
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+conn.commit()
 
 st.title("📊 Healthcare Recommendation System - Analytics Dashboard")
 
 # Load Data
-predictions = pd.read_sql("SELECT * FROM logs", conn)
-activities = pd.read_sql("SELECT * FROM activities", conn)
-feedbacks = pd.read_sql("SELECT * FROM feedback", conn)
+predictions = pd.read_sql("SELECT * FROM prediction_logs", conn)
+activities = pd.read_sql("SELECT * FROM activity_logs", conn)
+feedbacks = pd.read_sql("SELECT * FROM feedback_logs", conn)
 
 st.sidebar.title("🫀 Heart Disease Prediction")
 
@@ -101,4 +137,5 @@ with tab2:
     st.components.v1.html(f"""
         <iframe width="100%" height="600" src="{powerbi_link2}" frameborder="0" allowFullScreen="true"></iframe>
     """, height=620)
+
 
