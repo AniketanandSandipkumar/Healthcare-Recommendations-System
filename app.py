@@ -111,11 +111,12 @@ st.pyplot(fig)
 st.subheader("📈 Power BI Dashboards")
 tab1, tab2 = st.tabs(["Patient Risk & Demographics", "Symptoms & Feature / Exercise Risk"])
 with tab1:
-    powerbi_link1 = "YOUR_POWERBI_LINK_1"
-    st.components.v1.html(f'<iframe width="100%" height="600" src="{https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+    powerbi_link1 = "https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be"
+    st.components.v1.html(f'<iframe width="100%" height="600" src="{powerbi_link1}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
 with tab2:
-    powerbi_link2 = "YOUR_POWERBI_LINK_2"
-    st.components.v1.html(f'<iframe width="100%" height="600" src="{https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+    powerbi_link2 = "https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be"
+    st.components.v1.html(f'<iframe width="100%" height="600" src="{powerbi_link2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
 
 
