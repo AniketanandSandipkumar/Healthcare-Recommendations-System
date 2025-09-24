@@ -104,4 +104,3 @@ def log_activity(user_id: int, event_type: str, item: str, db: Session = Depends
     db.commit()
     return {"msg": "Activity logged"}
 
-
