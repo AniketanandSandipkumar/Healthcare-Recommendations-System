@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from db import SessionLocal, User
 from pydantic import BaseModel
-
+from typing import List
 # Config
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
@@ -103,4 +103,5 @@ def log_activity(user_id: int, event_type: str, item: str, db: Session = Depends
     db.add(activity)
     db.commit()
     return {"msg": "Activity logged"}
+
 
