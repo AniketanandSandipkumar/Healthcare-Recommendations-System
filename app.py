@@ -1,15 +1,54 @@
 import streamlit as st
-import requests
 import pandas as pd
+import joblib
 
-API_URL = "https://healthcare-backend.onrender.com"  # Replace with actual backend URL
+# ----------------- LOAD MODELS -----------------
+heart_model = joblib.load("heart_model.pkl")
+heart_scaler = joblib.load("heart_scaler.pkl")
+knn_model = joblib.load("knn_model.pkl")
+scaler = joblib.load("scaler.pkl")
 
-st.set_page_config(page_title="Healthcare Recommender", layout="wide")
+df_knn = pd.read_csv("disease_drug_mapping.csv")
+symptom_cols = [c for c in df_knn.columns if "Symptom" in c]
+feature_matrix = scaler.transform(df_knn[symptom_cols])
+
+# ----------------- FUNCTIONS -----------------
+def predict_heart(features):
+    X = pd.DataFrame([features], columns=[
+        "age","sex","chest_pain","blood_pressure","cholestrol",
+        "fbs","restecg","max_heart_rate","exang",
+        "oldpeak","slope","major_vessels","thal"
+    ])
+    X_scaled = heart_scaler.transform(X)
+    prediction = heart_model.predict(X_scaled)[0]
+    proba = heart_model.predict_proba(X_scaled)[0].tolist()
+    return prediction, proba
+
+def get_knn_recommendations(disease_name, num_recs=5):
+    df_knn['Disease'] = df_knn['Disease'].str.strip().str.lower()
+    disease_name = disease_name.strip().lower()
+    matches = df_knn[df_knn['Disease'].str.contains(disease_name, case=False, na=False)]['Disease'].unique()
+    if len(matches) == 0: return None
+    closest_match = matches[0]
+    idx = df_knn[df_knn['Disease'] == closest_match].index[0]
+    distances, indices = knn_model.kneighbors([feature_matrix[idx]])
+    recommended_diseases = df_knn.iloc[indices[0][1:num_recs+1]]
+    return recommended_diseases[['Disease','Drug']]
+
+# ----------------- STREAMLIT UI -----------------
 st.title("🏥 Healthcare Recommendation System")
 
-# ============= Heart Disease Form =============
-st.sidebar.header("Heart Disease Prediction")
-with st.sidebar.form("heart_form"):
+# ----------- Authentication (Frontend only check) -----------
+st.sidebar.header("Login / Signup")
+username = st.sidebar.text_input("Username")
+password = st.sidebar.text_input("Password", type="password")
+if st.sidebar.button("Login"):
+    st.session_state["user"] = username
+    st.success(f"Welcome {username}!")
+
+# ----------- Heart Disease Prediction -----------
+st.subheader("❤️ Heart Disease Prediction")
+with st.form("heart_form"):
     age = st.number_input("Age", 20, 100, 40)
     sex = st.selectbox("Sex (0=Female,1=Male)", [0,1])
     chest_pain = st.selectbox("Chest Pain Type (0-3)", [0,1,2,3])
@@ -26,57 +65,24 @@ with st.sidebar.form("heart_form"):
     submit = st.form_submit_button("Predict")
 
 if submit:
-    payload = {"age": age,"sex": sex,"chest_pain": chest_pain,
-        "blood_pressure": blood_pressure,"cholestrol": cholestrol,
-        "fbs": fbs,"restecg": restecg,"max_heart_rate": max_heart_rate,
-        "exang": exang,"oldpeak": oldpeak,"slope": slope,
-        "major_vessels": major_vessels,"thal": thal}
-    try:
-        res = requests.post(f"{API_URL}/predict_heart", json=payload).json()
-        st.write("### 🩺 Prediction Result:")
-        st.write(f"**Heart Disease Risk:** {'YES' if res['prediction']==1 else 'NO'}")
-        st.write(f"**Probabilities:** {res['probabilities']}")
-    except Exception as e:
-        st.error(f"Error: {e}")
+    features = [age, sex, chest_pain, blood_pressure, cholestrol,
+                fbs, restecg, max_heart_rate, exang,
+                oldpeak, slope, major_vessels, thal]
+    pred, proba = predict_heart(features)
+    st.write("### 🩺 Prediction Result:")
+    st.write(f"**Heart Disease Risk:** {'YES' if pred==1 else 'NO'}")
+    st.write(f"**Probabilities:** {{'No Disease': {proba[0]:.2f}, 'Disease': {proba[1]:.2f}}}")
 
-# ============= Disease-Drug Recommendation =============
+# ----------- Disease & Drug Recommendation -----------
 st.subheader("💊 Disease & Drug Recommendation")
 with st.form("disease_form"):
-    disease_name = st.text_input("Enter Disease Name")
+    disease_name = st.text_input("Enter Disease Name", "")
     submit_disease = st.form_submit_button("Get Recommendations")
 
 if submit_disease and disease_name.strip() != "":
-    try:
-        res = requests.get(f"{API_URL}/recommend_knn/{disease_name}").json()
-        if "recommendations" in res:
-            st.dataframe(pd.DataFrame(res["recommendations"]))
-        else:
-            st.warning(res.get("detail", "⚠️ No recommendations found."))
-    except Exception as e:
-        st.error(f"Error fetching recommendations: {e}")
-
-# ============= Analytics + Power BI =============
-st.markdown("---")
-st.subheader("📊 Interactive Analytics")
-import analytics  # renders all Plotly charts
-
-# Power BI Dashboards (iframe)
-st.subheader("📈 Power BI Dashboards")
-tab1, tab2 = st.tabs(["Patient Risk & Demographics", "Symptoms & Feature / Exercise Risk"])
-with tab1:
-    powerbi_link1 = "https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be"
-    st.components.v1.html(f'<iframe width="100%" height="600" src="{powerbi_link1}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
-with tab2:
-    powerbi_link2 = "https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be"
-    st.components.v1.html(f'<iframe width="100%" height="600" src="{powerbi_link2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
-
-
-
-
-
-
-
-
-
-
-
+    recs = get_knn_recommendations(disease_name)
+    if recs is None:
+        st.warning(f"⚠️ No recommendations found for '{disease_name}'.")
+    else:
+        st.write("### Recommended Diseases & Drugs")
+        st.dataframe(recs)
