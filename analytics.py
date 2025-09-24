@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 # 1. Connect to SQLite Database
-conn = sqlite3.connect('healthcare.db')  # Update with your DB path
+conn = sqlite3.connect('app.db')  
 
 # 2. Load Data
 @st.cache_data
@@ -101,3 +101,4 @@ fig_treemap = px.treemap(treemap_data, path=['disease','drug','sentiment'], valu
                          color='sentiment', color_discrete_map={'Positive':'green','Negative':'red','Neutral':'grey'},
                          title="Disease → Drug → Sentiment Hierarchy")
 st.plotly_chart(fig_treemap)
+
