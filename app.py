@@ -96,55 +96,65 @@ st.subheader("📊 Plotly Insights")
 
 # 1. Heart Disease Count by Age
 fig1 = px.histogram(df_heart, x="age", nbins=20, color="target",
-                    labels={"target":"Heart Disease"}, title="Heart Disease Count by Age")
+                    labels={"target":"Heart Disease"}, 
+                    title="Heart Disease Count by Age in Cleveland Dataset")
 st.plotly_chart(fig1)
 
 # 2. Heart Disease Probability by Chest Pain Type
-fig2 = px.bar(df_heart.groupby("chest_pain")["target"].mean().reset_index(),
-              x="chest_pain", y="target", labels={"target":"Disease Probability"},
+fig2 = px.bar(df_heart.groupby("cp")["target"].mean().reset_index(),
+              x="cp", y="target", labels={"cp":"Chest Pain Type", "target":"Disease Probability"},
               title="Heart Disease Probability by Chest Pain Type")
 st.plotly_chart(fig2)
 
-# 3. Heart Disease by Sex
-fig3 = px.pie(df_heart, names="sex", values="target", title="Heart Disease Distribution by Sex")
+# 3. Heart Disease Distribution by Sex
+fig3 = px.pie(df_heart, names="sex", values="target", 
+              title="Heart Disease Distribution by Sex")
 st.plotly_chart(fig3)
 
 # 4. Correlation Heatmap (Heart Features)
 corr = df_heart.corr()
-fig4 = px.imshow(corr, text_auto=True, aspect="auto", title="Feature Correlation Heatmap")
+fig4 = px.imshow(corr, text_auto=True, aspect="auto", 
+                 title="Feature Correlation Heatmap (Heart Cleveland Dataset)")
 st.plotly_chart(fig4)
 
-# 5. Top 10 Diseases in Dataset
+# 5. Top 10 Diseases in Disease-Drug Dataset
 top_diseases = df_knn['Disease'].value_counts().nlargest(10).reset_index()
 top_diseases.columns = ["Disease", "Count"]
-fig5 = px.bar(top_diseases, x="Disease", y="Count", title="Top 10 Diseases")
+fig5 = px.bar(top_diseases, x="Disease", y="Count", 
+              title="Top 10 Diseases in Disease-Drug Mapping")
 st.plotly_chart(fig5)
 
-# 6. Top 10 Drugs
+# 6. Top 10 Drugs in Disease-Drug Dataset
 top_drugs = df_knn['Drug'].value_counts().nlargest(10).reset_index()
 top_drugs.columns = ["Drug","Count"]
-fig6 = px.bar(top_drugs, x="Drug", y="Count", title="Top 10 Recommended Drugs")
+fig6 = px.bar(top_drugs, x="Drug", y="Count", 
+              title="Top 10 Drugs in Disease-Drug Mapping")
 st.plotly_chart(fig6)
 
-# 7. Heart Disease by Resting BP
-fig7 = px.scatter(df_heart, x="blood_pressure", y="max_heart_rate", color="target",
+# 7. Max Heart Rate vs Resting BP by Heart Disease
+fig7 = px.scatter(df_heart, x="trestbps", y="thalach", color="target",
+                  labels={"trestbps":"Resting Blood Pressure", "thalach":"Max Heart Rate", "target":"Heart Disease"},
                   title="Max Heart Rate vs Resting BP colored by Heart Disease")
 st.plotly_chart(fig7)
 
-# 8. Heart Disease by Cholestrol vs Age
-fig8 = px.scatter(df_heart, x="age", y="cholestrol", color="target",
+# 8. Cholestrol vs Age colored by Heart Disease
+fig8 = px.scatter(df_heart, x="age", y="chol", color="target",
+                  labels={"chol":"Cholestrol", "target":"Heart Disease"},
                   title="Cholestrol vs Age with Heart Disease")
 st.plotly_chart(fig8)
 
-# 9. Disease Symptom Counts (Top 10 Symptoms)
+# 9. Top 10 Symptoms in Disease-Drug Mapping
 symptom_counts = df_knn[symptom_cols].sum().sort_values(ascending=False).nlargest(10).reset_index()
 symptom_counts.columns = ["Symptom","Count"]
-fig9 = px.bar(symptom_counts, x="Symptom", y="Count", title="Top 10 Symptoms in Dataset")
+fig9 = px.bar(symptom_counts, x="Symptom", y="Count", 
+              title="Top 10 Symptoms in Disease-Drug Mapping")
 st.plotly_chart(fig9)
 
 # 10. Disease-Drug Relationship Heatmap
 drug_disease_matrix = pd.crosstab(df_knn['Disease'], df_knn['Drug'])
-fig10 = px.imshow(drug_disease_matrix, text_auto=True, aspect="auto", title="Disease-Drug Relationship Heatmap")
+fig10 = px.imshow(drug_disease_matrix, text_auto=True, aspect="auto", 
+                  labels={"x":"Drug", "y":"Disease", "color":"Count"},
+                  title="Disease-Drug Relationship Heatmap")
 st.plotly_chart(fig10)
 
 # ---------- POWER BI DASHBOARDS ----------
@@ -159,3 +169,4 @@ with tab1:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_1}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
 with tab2:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
