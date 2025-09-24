@@ -88,3 +88,20 @@ def debug_list_users(admin_key: str, db: Session = Depends(get_db)):
             "role": u.role
         } for u in users
     ]
+
+# main.py
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from db import UserActivity, get_db, User
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+@app.post("/activity/log")
+def log_activity(user_id: int, event_type: str, item: str, db: Session = Depends(get_db)):
+    activity = UserActivity(user_id=user_id, event_type=event_type, item=item)
+    db.add(activity)
+    db.commit()
+    return {"msg": "Activity logged"}
+
+
