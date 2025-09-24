@@ -65,4 +65,26 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not user: raise HTTPException(status_code=401, detail="Invalid username or password")
     token = create_access_token(data={"sub": user.username}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": token, "token_type":"bearer"}
+# ----------------- DEBUG ROUTE -----------------
+from sqlalchemy.orm import Session
 
+@app.get("/debug/users")
+def debug_list_users(admin_key: str, db: Session = Depends(get_db)):
+    """
+    Temporary debug route to list all registered users.
+    Provide the query parameter admin_key for safety.
+    Example: /debug/users?admin_key=my-debug-secret
+    """
+    SECRET_ADMIN_KEY = "my-debug-secret"  # Change to a strong secret
+    if admin_key != SECRET_ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "hashed_password": u.hashed_password,
+            "role": u.role
+        } for u in users
+    ]
