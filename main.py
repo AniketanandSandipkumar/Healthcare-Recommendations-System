@@ -10,9 +10,8 @@ from jose import jwt, JWTError
 import pandas as pd
 import joblib
 from textblob import TextBlob
-from sklearn.neighbors import NearestNeighbors
 
-#  CONFIG
+# ================= CONFIG =================
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -20,9 +19,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-app = FastAPI()
+app = FastAPI(title="Healthcare Recommendation Backend")
 
-# DB 
+# ================= DB =================
 def get_db():
     db = SessionLocal()
     try:
@@ -30,46 +29,24 @@ def get_db():
     finally:
         db.close()
 
-# HEART DISEASE MODEL 
-heart_model = joblib.load("heart_model.pkl")
-heart_scaler = joblib.load("heart_scaler.pkl")
-
+# ================= MODELS =================
+# Heart Disease Model
+heart_model = joblib.load("models/heart_model.pkl")
+heart_scaler = joblib.load("models/heart_scaler.pkl")
 heart_features = [
     "age","sex","chest_pain","blood_pressure","cholestrol",
     "fbs","restecg","max_heart_rate","exang",
     "oldpeak","slope","major_vessels","thal"
 ]
 
-class HeartRequest(BaseModel):
-    age: int
-    sex: int
-    chest_pain: int
-    blood_pressure: float
-    cholestrol: float
-    fbs: int
-    restecg: int
-    max_heart_rate: int
-    exang: int
-    oldpeak: float
-    slope: int
-    major_vessels: int
-    thal: int
-
-@app.post("/predict_heart")
-def predict_heart(req: HeartRequest):
-    X = pd.DataFrame([req.dict().values()], columns=heart_features)
-    X_scaled = heart_scaler.transform(X)
-    prediction = heart_model.predict(X_scaled)[0]
-    proba = heart_model.predict_proba(X_scaled)[0].tolist()
-    return {"prediction": int(prediction), "probabilities": {"No Disease": proba[0], "Disease": proba[1]}}
-
-#  KNN MODEL 
-knn_model = joblib.load("knn_model.pkl")
-scaler = joblib.load("scaler.pkl")
+# KNN Disease-Drug Model
+knn_model = joblib.load("models/knn_model.pkl")
+scaler = joblib.load("models/scaler.pkl")
 df_knn = pd.read_csv("disease_drug_mapping.csv")
 symptom_cols = [c for c in df_knn.columns if "Symptom" in c]
 feature_matrix = scaler.transform(df_knn[symptom_cols])
 
+# ================= HELPERS =================
 def get_knn_recommendations(disease_name, df, model, feature_matrix, num_recs=5):
     df['Disease'] = df['Disease'].str.strip().str.lower()
     disease_name = disease_name.strip().lower()
@@ -81,7 +58,6 @@ def get_knn_recommendations(disease_name, df, model, feature_matrix, num_recs=5)
     recommended_diseases = df.iloc[indices[0][1:num_recs+1]]
     return recommended_diseases[['Disease','Drug']].to_dict(orient="records")
 
-#  AUTH 
 def get_password_hash(password): return pwd_context.hash(password)
 def verify_password(plain, hashed): return pwd_context.verify(plain, hashed)
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -107,11 +83,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None: raise HTTPException(status_code=401, detail="User not found")
     return user
 
-# ROUTES 
+# ================= SCHEMAS =================
+class HeartRequest(BaseModel):
+    age: int; sex: int; chest_pain: int
+    blood_pressure: float; cholestrol: float
+    fbs: int; restecg: int; max_heart_rate: int
+    exang: int; oldpeak: float; slope: int
+    major_vessels: int; thal: int
+
 class UserCreate(BaseModel):
-    username: str
-    password: str
-    role: str = "user"
+    username: str; password: str; role: str = "user"
 
 class UserProfileUpdate(BaseModel):
     age: int | None = None
@@ -126,13 +107,13 @@ class FeedbackRequest(BaseModel):
     prediction_id: int
     text: str
 
+# ================= ROUTES =================
 @app.post("/signup")
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     if get_user(db, user.username):
         raise HTTPException(status_code=400, detail="Username already exists")
     new_user = User(username=user.username, hashed_password=get_password_hash(user.password), role=user.role)
-    db.add(new_user)
-    db.commit()
+    db.add(new_user); db.commit()
     return {"msg":"User created successfully"}
 
 @app.post("/login")
@@ -147,89 +128,44 @@ def update_profile(profile: UserProfileUpdate, db: Session = Depends(get_db), cu
     if profile.age: current_user.age = profile.age
     if profile.gender: current_user.gender = profile.gender
     if profile.preferences: current_user.preferences = profile.preferences
-    db.commit()
-    return {"msg": "Profile updated successfully"}
+    db.commit(); return {"msg": "Profile updated successfully"}
 
 @app.get("/profile")
 def get_profile(current_user: User = Depends(get_current_user)):
-    return {
-        "username": current_user.username,
-        "role": current_user.role,
-        "age": current_user.age,
-        "gender": current_user.gender,
-        "preferences": current_user.preferences
-    }
+    return {"username": current_user.username,"role": current_user.role,
+            "age": current_user.age,"gender": current_user.gender,"preferences": current_user.preferences}
 
-# LOGS
-@app.get("/logs")
-def get_logs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role=="admin":
-        logs = db.query(PredictionLog).all()
-    else:
-        logs = db.query(PredictionLog).filter(PredictionLog.user_id==current_user.id).all()
-    return [{"disease": l.disease, "drug": l.drug, "timestamp": l.timestamp} for l in logs]
+@app.post("/predict_heart")
+def predict_heart(req: HeartRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    X = pd.DataFrame([req.dict().values()], columns=heart_features)
+    X_scaled = heart_scaler.transform(X)
+    prediction = heart_model.predict(X_scaled)[0]
+    proba = heart_model.predict_proba(X_scaled)[0].tolist()
+    log = PredictionLog(user_id=current_user.id, disease="Heart Disease", drug="N/A")
+    db.add(log); db.commit()
+    return {"prediction": int(prediction), "probabilities": {"No Disease": proba[0], "Disease": proba[1]}}
 
-@app.post("/activity")
-def log_activity(activity: ActivityCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    new_activity = ActivityLog(user_id=current_user.id, action_type=activity.action_type, details=activity.details)
-    db.add(new_activity)
-    db.commit()
-    return {"msg": "Activity logged"}
-
-@app.get("/activity")
-def get_activity(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role=="admin":
-        activities = db.query(ActivityLog).all()
-    else:
-        activities = db.query(ActivityLog).filter(ActivityLog.user_id==current_user.id).all()
-    return [{"type": a.action_type, "details": a.details, "timestamp": a.timestamp} for a in activities]
-
-# FEEDBACK 
-@app.post("/feedback")
-def submit_feedback(req: FeedbackRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    blob = TextBlob(req.text)
-    polarity = blob.sentiment.polarity
-    if polarity>0.1: sentiment="positive"
-    elif polarity<-0.1: sentiment="negative"
-    else: sentiment="neutral"
-    feedback = FeedbackLog(user_id=current_user.id, prediction_id=req.prediction_id, text=req.text, sentiment=sentiment)
-    db.add(feedback)
-    db.commit()
-    return {"msg":"Feedback submitted", "sentiment":sentiment}
-
-@app.get("/feedback/user")
-def get_user_feedback(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    feedbacks = db.query(FeedbackLog).filter(FeedbackLog.user_id==current_user.id).all()
-    return [{"text": f.text, "sentiment": f.sentiment, "timestamp": f.timestamp} for f in feedbacks]
-
-@app.get("/feedback/global")
-def get_global_feedback(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role not in ["admin","analyst"]: raise HTTPException(status_code=403, detail="Access denied")
-    sentiments = db.query(FeedbackLog.sentiment, func.count(FeedbackLog.sentiment)).group_by(FeedbackLog.sentiment).all()
-    return {"sentiment_distribution": dict(sentiments)}
-
-#  ANALYTICS
-@app.get("/analytics/user")
-def user_analytics(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    disease_counts = db.query(PredictionLog.disease, func.count(PredictionLog.disease))\
-        .filter(PredictionLog.user_id==current_user.id).group_by(PredictionLog.disease).all()
-    return {"most_common_disease": max(disease_counts,key=lambda x:x[1])[0] if disease_counts else None,
-            "disease_distribution": dict(disease_counts)}
-
-@app.get("/analytics/global")
-def global_trends(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role not in ["admin","analyst"]: raise HTTPException(status_code=403, detail="Access denied")
-    top_diseases = db.query(PredictionLog.disease, func.count(PredictionLog.disease)).group_by(PredictionLog.disease)\
-        .order_by(func.count(PredictionLog.disease).desc()).limit(5).all()
-    top_drugs = db.query(PredictionLog.drug, func.count(PredictionLog.drug)).group_by(PredictionLog.drug)\
-        .order_by(func.count(PredictionLog.drug).desc()).limit(5).all()
-    return {"top_diseases": dict(top_diseases), "top_drugs": dict(top_drugs)}
-
-# KNN
 @app.get("/recommend_knn/{disease_name}")
 def recommend_knn(disease_name: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     recs = get_knn_recommendations(disease_name, df_knn, knn_model, feature_matrix)
     if recs is None: raise HTTPException(status_code=404, detail=f"No disease found for '{disease_name}'")
+    for r in recs:
+        log = PredictionLog(user_id=current_user.id, disease=r['Disease'], drug=r['Drug'])
+        db.add(log)
+    db.commit()
     return {"input_disease": disease_name, "recommendations": recs}
 
+@app.post("/activity")
+def log_activity(activity: ActivityCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_activity = ActivityLog(user_id=current_user.id, action_type=activity.action_type, details=activity.details)
+    db.add(new_activity); db.commit(); return {"msg": "Activity logged"}
 
+@app.post("/feedback")
+def submit_feedback(req: FeedbackRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    blob = TextBlob(req.text); polarity = blob.sentiment.polarity
+    if polarity>0.1: sentiment="positive"
+    elif polarity<-0.1: sentiment="negative"
+    else: sentiment="neutral"
+    feedback = FeedbackLog(user_id=current_user.id, prediction_id=req.prediction_id, text=req.text, sentiment=sentiment)
+    db.add(feedback); db.commit()
+    return {"msg":"Feedback submitted", "sentiment":sentiment}
