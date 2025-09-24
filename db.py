@@ -1,5 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
+from datetime import datetime
 
 DATABASE_URL = "sqlite:///./app.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -13,11 +14,6 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(String, default="user")
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from datetime import datetime
-from database import Base
-
 class UserActivity(Base):
     __tablename__ = "user_activity"
     id = Column(Integer, primary_key=True, index=True)
@@ -26,5 +22,5 @@ class UserActivity(Base):
     item = Column(String)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+# Create all tables
 Base.metadata.create_all(bind=engine)
-
