@@ -1,49 +1,14 @@
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import sqlite3
 import requests
+import pandas as pd
 
-API_URL = "https://healthcare-backend-5omj.onrender.com"  # Replace with Render backend URL
+API_URL = "https://healthcare-backend.onrender.com"  # Replace with actual backend URL
 
-st.title("📊 Healthcare Recommendation System - Analytics Dashboard")
+st.set_page_config(page_title="Healthcare Recommender", layout="wide")
+st.title("🏥 Healthcare Recommendation System")
 
-# ----------------- FUNCTIONS -----------------
-def get_db_connection():
-    conn = sqlite3.connect("./app.db", check_same_thread=False)
-    return conn
-
-def load_predictions():
-    conn = get_db_connection()
-    try:
-        df = pd.read_sql("SELECT * FROM logs", conn)
-    except Exception:
-        # Return empty DataFrame if table does not exist
-        df = pd.DataFrame(columns=["id", "user_id", "disease", "drug", "timestamp"])
-    conn.close()
-    return df
-
-def load_activities():
-    conn = get_db_connection()
-    try:
-        df = pd.read_sql("SELECT * FROM activities", conn)
-    except Exception:
-        df = pd.DataFrame(columns=["id", "user_id", "action_type", "details", "timestamp"])
-    conn.close()
-    return df
-
-def load_feedbacks():
-    conn = get_db_connection()
-    try:
-        df = pd.read_sql("SELECT * FROM feedback", conn)
-    except Exception:
-        df = pd.DataFrame(columns=["id", "user_id", "prediction_id", "text", "sentiment", "timestamp"])
-    conn.close()
-    return df
-
-
-# ----------------- SIDEBAR HEART FORM -----------------
+# ============= Heart Disease Form =============
+st.sidebar.header("Heart Disease Prediction")
 with st.sidebar.form("heart_form"):
     age = st.number_input("Age", 20, 100, 40)
     sex = st.selectbox("Sex (0=Female,1=Male)", [0,1])
@@ -61,71 +26,41 @@ with st.sidebar.form("heart_form"):
     submit = st.form_submit_button("Predict")
 
 if submit:
-    payload = {
-        "age": age, "sex": sex, "chest_pain": chest_pain,
-        "blood_pressure": blood_pressure, "cholestrol": cholestrol,
-        "fbs": fbs, "restecg": restecg, "max_heart_rate": max_heart_rate,
-        "exang": exang, "oldpeak": oldpeak, "slope": slope,
-        "major_vessels": major_vessels, "thal": thal
-    }
-    res = requests.post(f"{API_URL}/predict_heart", json=payload).json()
-    st.write("### 🩺 Prediction Result:")
-    st.write(f"**Heart Disease Risk:** {'YES' if res['prediction']==1 else 'NO'}")
-    st.write(f"**Probabilities:** {res['probabilities']}")
+    payload = {"age": age,"sex": sex,"chest_pain": chest_pain,
+        "blood_pressure": blood_pressure,"cholestrol": cholestrol,
+        "fbs": fbs,"restecg": restecg,"max_heart_rate": max_heart_rate,
+        "exang": exang,"oldpeak": oldpeak,"slope": slope,
+        "major_vessels": major_vessels,"thal": thal}
+    try:
+        res = requests.post(f"{API_URL}/predict_heart", json=payload).json()
+        st.write("### 🩺 Prediction Result:")
+        st.write(f"**Heart Disease Risk:** {'YES' if res['prediction']==1 else 'NO'}")
+        st.write(f"**Probabilities:** {res['probabilities']}")
+    except Exception as e:
+        st.error(f"Error: {e}")
 
-# ----------------- DISEASE DRUG RECOMMENDER -----------------
+# ============= Disease-Drug Recommendation =============
 st.subheader("💊 Disease & Drug Recommendation")
-
 with st.form("disease_form"):
-    disease_name = st.text_input("Enter Disease Name", "")
+    disease_name = st.text_input("Enter Disease Name")
     submit_disease = st.form_submit_button("Get Recommendations")
 
 if submit_disease and disease_name.strip() != "":
     try:
         res = requests.get(f"{API_URL}/recommend_knn/{disease_name}").json()
-        if "recommendations" in res and res["recommendations"]:
-            rec_df = pd.DataFrame(res["recommendations"])
-            st.write("### Recommended Diseases & Drugs")
-            st.dataframe(rec_df)
+        if "recommendations" in res:
+            st.dataframe(pd.DataFrame(res["recommendations"]))
         else:
             st.warning(res.get("detail", "⚠️ No recommendations found."))
     except Exception as e:
         st.error(f"Error fetching recommendations: {e}")
 
+# ============= Analytics + Power BI =============
+st.markdown("---")
+st.subheader("📊 Interactive Analytics")
+import frontend.analytics  # renders all Plotly charts
 
-# ----------------- DASHBOARD -----------------
-predictions = load_predictions()
-activities = load_activities()
-feedbacks = load_feedbacks()
 
-# Disease Distribution
-st.subheader("Disease Distribution")
-disease_counts = predictions["disease"].value_counts()
-fig, ax = plt.subplots()
-sns.barplot(x=disease_counts.index, y=disease_counts.values, ax=ax)
-plt.xticks(rotation=90)
-st.pyplot(fig)
-
-# Drug Distribution
-st.subheader("Drug Recommendation Distribution")
-drug_counts = predictions["drug"].value_counts()
-fig, ax = plt.subplots()
-sns.barplot(x=drug_counts.index, y=drug_counts.values, ax=ax)
-st.pyplot(fig)
-
-# User Activity Trends
-st.subheader("User Activity Trends")
-activity_counts = activities["action_type"].value_counts()
-fig, ax = plt.subplots()
-sns.barplot(x=activity_counts.index, y=activity_counts.values, ax=ax)
-st.pyplot(fig)
-
-# Feedback Sentiment
-st.subheader("Feedback Sentiment Analysis")
-sentiment_counts = feedbacks["sentiment"].value_counts()
-fig, ax = plt.subplots()
-plt.pie(sentiment_counts.values, labels=sentiment_counts.index, autopct="%1.1f%%")
-st.pyplot(fig)
 
 # Power BI Dashboards (iframe)
 st.subheader("📈 Power BI Dashboards")
@@ -136,6 +71,7 @@ with tab1:
 with tab2:
     powerbi_link2 = "https://app.powerbi.com/reportEmbed?reportId=26314451-b947-4c3a-a525-fbcff2f06ba7&autoAuth=true&ctid=b10b7583-c2ed-4f35-8815-ed38d24ed1be"
     st.components.v1.html(f'<iframe width="100%" height="600" src="{powerbi_link2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
 
 
