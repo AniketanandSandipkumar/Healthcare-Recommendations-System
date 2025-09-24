@@ -38,7 +38,18 @@ def get_knn_recommendations(disease_name, num_recs=5):
     distances, indices = knn_model.kneighbors([feature_matrix[idx]])
     recommended_diseases = df_knn.iloc[indices[0][1:num_recs+1]]
     return recommended_diseases[['Disease','Drug']]
-
+    
+def log_activity(user_id, event_type, item):
+    """Send activity to backend"""
+    try:
+        requests.post(
+            f"{BACKEND_URL}/activity/log",
+            json={"user_id": user_id, "event_type": event_type, "item": item},
+            timeout=2
+        )
+    except Exception as e:
+        print("Activity logging failed:", e)
+        
 # ----------------- STREAMLIT UI -----------------
 st.title("🏥 Healthcare Recommendation System")
 
@@ -169,4 +180,5 @@ with tab1:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_1}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
 with tab2:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
