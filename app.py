@@ -101,6 +101,10 @@ if submit_disease and disease_name.strip() != "":
     else:
         st.write("### Recommended Diseases & Drugs")
         st.dataframe(recs)
+        
+ # Log activity
+        if "user_id" in st.session_state:
+            log_activity(st.session_state["user_id"], "disease_lookup", disease_name)
 
 # ---------- PLOTLY VISUALIZATIONS ----------
 st.subheader("📊 Plotly Insights")
@@ -180,5 +184,6 @@ with tab1:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_1}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
 with tab2:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
+
 
 
