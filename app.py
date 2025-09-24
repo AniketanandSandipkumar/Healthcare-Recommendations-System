@@ -3,7 +3,8 @@ import pandas as pd
 import joblib
 import plotly.express as px
 import plotly.graph_objects as go
-
+from datetime import datetime
+import requests
 # ----------------- LOAD MODELS & DATA -----------------
 heart_model = joblib.load("heart_model.pkl")
 heart_scaler = joblib.load("heart_scaler.pkl")
@@ -186,4 +187,28 @@ with tab2:
     st.components.v1.html(f'<iframe width="100%" height="600" src="{POWERBI_LINK_2}" frameborder="0" allowFullScreen="true"></iframe>', height=620)
 
 
+st.title("📊 Real-Time User Activity Dashboard")
+st.write("This dashboard displays all user interactions logged by the backend.")
+# Replace this with your deployed Render backend debug route
+BACKEND_URL = "https://your-backend.onrender.com/debug/activities"
+
+try:
+    response = requests.get(BACKEND_URL)
+    if response.status_code == 200:
+        activities = response.json()
+    else:
+        st.error(f"Failed to fetch data. Status code: {response.status_code}")
+        activities = []
+except Exception as e:
+    st.error(f"Error fetching data: {e}")
+    activities = []
+if activities:
+    # Convert timestamp to datetime
+    for a in activities:
+        a['timestamp'] = datetime.fromisoformat(a['timestamp'])
+
+    df = pd.DataFrame(activities)
+    st.dataframe(df)
+else:
+    st.write("No user activity logged yet.")
 
