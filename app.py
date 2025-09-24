@@ -190,7 +190,7 @@ with tab2:
 st.title("📊 Real-Time User Activity Dashboard")
 st.write("This dashboard displays all user interactions logged by the backend.")
 # Replace this with your deployed Render backend debug route
-BACKEND_URL = "https://your-backend.onrender.com/debug/activities"
+BACKEND_URL = "https://healthcare-backend-5omj.onrender.com/debug/activities"
 
 try:
     response = requests.get(BACKEND_URL)
@@ -211,4 +211,5 @@ if activities:
     st.dataframe(df)
 else:
     st.write("No user activity logged yet.")
+
 
