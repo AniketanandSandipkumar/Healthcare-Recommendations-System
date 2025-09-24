@@ -16,3 +16,5 @@ seaborn
 wordcloud
 gunicorn
 python-multipart
+database
+typing
