@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import requests
-# ----------------- LOAD MODELS & DATA -----------------
+# LOAD MODELS & DATA 
 heart_model = joblib.load("heart_model.pkl")
 heart_scaler = joblib.load("heart_scaler.pkl")
 knn_model = joblib.load("knn_model.pkl")
@@ -17,7 +17,7 @@ feature_matrix = scaler.transform(df_knn[symptom_cols])
 
 df_heart = pd.read_csv("heart_cleveland_clean.csv")
 
-# ----------------- FUNCTIONS -----------------
+# FUNCTIONS 
 def predict_heart(features):
     X = pd.DataFrame([features], columns=[
         "age","sex","chest_pain","blood_pressure","cholestrol",
@@ -51,10 +51,10 @@ def log_activity(user_id, event_type, item):
     except Exception as e:
         print("Activity logging failed:", e)
         
-# ----------------- STREAMLIT UI -----------------
+#  STREAMLIT UI 
 st.title("🏥 Healthcare Recommendation System")
 
-# ---------- Authentication ----------
+# Authentication 
 st.sidebar.header("Login / Signup")
 username = st.sidebar.text_input("Username")
 password = st.sidebar.text_input("Password", type="password")
@@ -62,7 +62,7 @@ if st.sidebar.button("Login"):
     st.session_state["user"] = username
     st.success(f"Welcome {username}!")
 
-# ---------- Heart Disease Prediction ----------
+#  Heart Disease Prediction 
 st.subheader("❤️ Heart Disease Prediction")
 with st.form("heart_form"):
     age = st.number_input("Age", 20, 100, 40)
@@ -89,7 +89,7 @@ if submit:
     st.write(f"**Heart Disease Risk:** {'YES' if pred==1 else 'NO'}")
     st.write(f"**Probabilities:** {{'No Disease': {proba[0]:.2f}, 'Disease': {proba[1]:.2f}}}")
 
-# ---------- Disease & Drug Recommendation ----------
+# Disease & Drug Recommendation 
 st.subheader("💊 Disease & Drug Recommendation")
 with st.form("disease_form"):
     disease_name = st.text_input("Enter Disease Name", "")
@@ -107,7 +107,7 @@ if submit_disease and disease_name.strip() != "":
         if "user_id" in st.session_state:
             log_activity(st.session_state["user_id"], "disease_lookup", disease_name)
 
-# ---------- PLOTLY VISUALIZATIONS ----------
+# PLOTLY VISUALIZATIONS 
 st.subheader("📊 Plotly Insights")
 
 # 1. Heart Disease Count by Age
@@ -211,5 +211,6 @@ if activities:
     st.dataframe(df)
 else:
     st.write("No user activity logged yet.")
+
 
 
