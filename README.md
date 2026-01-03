@@ -147,13 +147,13 @@ Healthcare-Recommendations-System/<br>
 
 ## 🚀 Deployment
 
-### Backend (FastAPI)
+###***Backend (FastAPI)
 - Hosted on Render
 - Configured using `render.yaml`
 - Startup command:
 uvicorn main:app --host 0.0.0.0 --port 10000
 
-##Frontend (Streamlit)<br>
+##***Frontend (Streamlit)<br>
 
 -Uses trained ML models for predictions<br>
 -Connects to backend APIs for authentication and activity tracking<br>
@@ -172,7 +172,9 @@ Aniket Anand<br>
 B.Tech Computer Science<br>
 AI | Machine Learning | Data Science | Full Stack Development<br>
 GitHub: AniketanandSandipkumar<br>
-
+App link:https://healthcare-frontend-rfkp.onrender.com (frontend)<br>
+         https://healthcare-backend-5omj.onrender.com (backend)<br><br>
+         
 ⭐ Acknowledgements<br>
 *UCI Cleveland Heart Disease Dataset
 *Streamlit & FastAPI developer communities
